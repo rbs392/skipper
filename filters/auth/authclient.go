@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"bytes"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/zalando/skipper/filters"
@@ -119,7 +120,10 @@ func (ac *authClient) getTokeninfo(token string, ctx filters.FilterContext) (map
 }
 
 func (ac *authClient) getWebhook(ctx filters.FilterContext) (*http.Response, error) {
-	req, err := http.NewRequest("GET", ac.url.String(), nil)
+	body, _ := ioutil.ReadAll(ctx.Request().Body)
+	ctx.Request().Body = ioutil.NopCloser(bytes.NewBuffer(body))
+
+	req, err := http.NewRequest(ctx.Request().Method, ac.url.String(), ioutil.NopCloser(bytes.NewBuffer(body)))
 	if err != nil {
 		return nil, err
 	}
